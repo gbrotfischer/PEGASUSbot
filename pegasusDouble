@@ -1,0 +1,88 @@
+
+import requests
+import time
+
+
+token = '' # Token do bot do telegram
+chat_id = '' # Id do chat para qual voce quer mandar a mensagem
+
+#Variaveis Globais sendo alteradas dentro da função
+cont_atencao = 1
+cont_apagar = 1
+cont_confirmada = 1
+
+url = 'https://blaze.com/api/roulette_games/recent' # Url da api da blaze jogo Roulette
+
+while True: # Metodo para repetir o código que está dentro do while
+
+    try: #Criando um filtro pra possivel erro no retorno da api
+        response = requests.get(url)
+        r = response.json()
+    except: 
+        print('Não deu')
+
+    ray = [] # Lista vazia que irá receber os valores extraidos da api da blaze
+
+    # Pegando apenas os valores de "color" e renomeando;
+
+    for x in range(len(r)):
+        val = r[x]['color']
+        if val == 1:
+            val = 'Vermelho'
+
+        if val == 2:
+            val = 'Preto'
+
+        if val == 0:
+            val = 'Branco'
+
+        ray.append(val) # Adicionando os valores extraidos da blaze para a lista vazia de ray
+
+    time.sleep(2.5) # Codigo será repetido a cada 2.5 segundos
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # Funções com mensagens a serem enviada ao telegram quando requisitadas
+
+    def atencao():
+        text = '''⚠️Atenção, possível sinal ⚠️\nAposte aqui: blaze.com/r/ZGZGoA '''
+        url_base = f'https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={text}'
+        requests.post(url_base)
+        global cont_atencao, cont_apagar, cont_confirmada
+        cont_atencao = 0
+        cont_apagar = 1
+        cont_confirmada = 1
+
+    def apagar():
+        text = '''🔺Entrada Cancelada🔺'''
+        url_base = f'https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={text}'
+        requests.post(url_base)
+        global cont_apagar, cont_atencao
+        cont_apagar = 0
+        cont_atencao = 1
+
+
+    def entrada():
+        text = '🤖 Sinal confirmado 🤖 \nEntrada após: {0} \nSaida após: 2.0x'
+        url_base = f'https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={text}'
+        requests.post(url_base)
+        global cont_confirmada, cont_atencao
+        cont_confirmada = 0
+        cont_atencao = 1
+
+
+        # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    # Regras para requisições das funções de mensagens
+
+    if ray[0:2] == ['Vermelho', 'Vermelho'] and cont_atencao == 1:
+        atencao()
+        print('Possível Entrada!')
+
+    if ray[0:3] == ['Preto', 'Vermelho', 'Vermelho'] and cont_apagar == 1:
+        apagar()
+        print('Entrada Cancelada!')
+
+    if ray[0:3] == ['Vermelho', 'Vermelho', 'Vermelho'] and cont_confirmada == 1:
+        entrada()
+        print('Entrada Confirmada!')
